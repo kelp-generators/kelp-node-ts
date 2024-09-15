@@ -59,7 +59,7 @@ const generator = async (prompts, validationRegExes, about, dir, cmd, mergeScrip
     const license = await prompt('License', 'MIT', validationRegExes.license)
     let repo = null
     if (await confirm('Do you have a GitHub repo?')) {
-        repo = await prompt('Repository', `${about.githubUsername}/${identifier}`, repository)
+        repo = await prompt('Repository', `${about.githubUsername}/${identifier}`, validationRegExes.repository)
     }
     const tsTarget = (await prompt('Target', 'ESNext', /^(es|ES|Es|eS)(([0-9]|(N|n)(E|e)(X|x)(T|t))*)$/)).toLowerCase()
     const tsModule = await toggle('Module', 'commonjs', 'esnext')
