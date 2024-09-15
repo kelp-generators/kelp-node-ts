@@ -55,14 +55,14 @@ const generator = async (prompts, validationRegExes, about, dir, cmd, mergeScrip
 
     // Do your prompts here
     const description = await prompt('Description', '', null, true)
-    let main = await toggle('Entry point', 'main.js', 'index.js')
+    let main = await toggle('Entry point', 'main.ts', 'index.ts')
     const license = await prompt('License', 'MIT', validationRegExes.license)
     let repo = null
     if (await confirm('Do you have a GitHub repo?')) {
         repo = await prompt('Repository', `${about.githubUsername}/${identifier}`, validationRegExes.repository)
     }
     const tsTarget = (await prompt('Target', 'ESNext', /^(es|ES|Es|eS)(([0-9]|(N|n)(E|e)(X|x)(T|t))*)$/)).toLowerCase()
-    const tsModule = await toggle('Module', 'commonjs', 'esnext')
+    const tsModule = await toggle('Module', 'esnext', 'commonjs')
 
     // Do your generation here
 
@@ -71,7 +71,7 @@ const generator = async (prompts, validationRegExes, about, dir, cmd, mergeScrip
         name: `${identifier}`,
         version: '0.0.0',
         description,
-        main: `dist/${main}`,
+        main: `dist/${main.replace('.ts', '.js')}`,
         scripts: {
             test: "echo \"Error: no test specified\" && exit 1"
         },
