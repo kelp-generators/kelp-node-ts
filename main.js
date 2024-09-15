@@ -50,10 +50,82 @@ const generator = async (prompts, validationRegExes, about, dir, cmd, mergeScrip
     */
 
     const { prompt, confirm, numeral, toggle, select, multiSelect } = prompts
+    const path = require('path')
+    const identifier = JSON.parse(fs.readFileSync(path.join(dir, 'nautus', '.internal', 'project.json')).toString('utf8')).identifier
 
     // Do your prompts here
+    const description = await prompt('Description', '', null, true)
+    let main = await toggle('Entry point', 'main.js', 'index.js')
+    const license = await prompt('License', 'MIT', validationRegExes.license)
+    let repo = null
+    if (await confirm('Do you have a GitHub repo?')) {
+        repo = await prompt('Repository', `${about.githubUsername}/${identifier}`, repository)
+    }
+    const tsTarget = (await prompt('Target', 'ESNext', /^(es|ES|Es|eS)(([0-9]|(N|n)(E|e)(X|x)(T|t))*)$/)).toLowerCase()
+    const tsModule = await toggle('Module', 'commonjs', 'esnext')
 
     // Do your generation here
+
+    // Generate package.json
+    const pkgJSON = {
+        name: `${identifier}`,
+        version: '0.0.0',
+        description,
+        main: `dist/${main}`,
+        scripts: {
+            test: "echo \"Error: no test specified\" && exit 1"
+        },
+        keywords: [],
+        author: `${about.name || about.githubUsername} (https://github.com/${about.githubUsername})`,
+        license,
+        dependencies: {},
+        types: 'dist/index.d.ts'
+    }
+
+    if (repo) {
+        pkgJSON.repository = {
+            type: 'git',
+            url: `git+https://github.com/${repo}.git`
+        }
+        pkgJSON.bugs = {
+            url: `https://github.com/${repo}/issues`
+        }
+        pkgJSON.homepage = `https://github.com/${repo}#readme`
+    }
+
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify(pkgJSON, null, 4))
+    fs.ensureFileSync(path.join(dir, 'README.md'))
+
+    await cmd('npm i typescript @types/node -D')
+    fs.writeFileSync(path.join(dir, 'tsconfig.json'), JSON.stringify({
+        compilerOptions: {
+            target: tsTarget,
+            module: tsModule,
+            declaration: true,
+            outDir: './dist',
+            strict: true,
+        },
+        include: ["src/**/*.ts"],
+        exclude: ["node_modules", "**/*.spec.ts"]
+    }, null, 4))
+    fs.ensureDirSync(path.join(dir, 'src'))
+    fs.ensureFileSync(path.join(dir, 'src', main))
+
+    // @Build.js
+    removeDefault('Build') // Removes the default error message
+    mergeScript('Build', `exit(await spawn(modules.path.join(process.cwd(), 'node_modules/.bin/tsc'), []))`)
+
+    // @Prep.js
+    mergeScript('Prep', `await cmd(modules.path.join(process.cwd(), 'node_modules/.bin/tsc')).catch(error)`)
+
+    // @Run.js
+    removeDefault('Run') // Removes the default error message
+    mergeScript('Run', `exit(await spawn('node', ["dist/${main}", ...process.argv.slice(3)]))`)
+
+    fs.appendFileSync(path.join(dir, '.npmignore'), 'lib/\n.dccache\nnautus\n')
+
+    // INFO
+    console.log(chalk.green(`Successfully generated project. You can run it by using ${chalk.cyan('nautus run')}. Start by editing ${chalk.gray('./src/' + main)}`))
 }
 
 module.exports = {
