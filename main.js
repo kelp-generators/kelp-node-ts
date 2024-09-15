@@ -121,7 +121,7 @@ const generator = async (prompts, validationRegExes, about, dir, cmd, mergeScrip
 
     // @Run.js
     removeDefault('Run') // Removes the default error message
-    mergeScript('Run', `exit(await spawn('node', ["dist/${main}", ...process.argv.slice(3)]))`)
+    mergeScript('Run', `exit(await spawn('node', ["dist/${main.replace('.ts', '.js') }", ...process.argv.slice(3)]))`)
 
     fs.appendFileSync(path.join(dir, '.npmignore'), 'lib/\n.dccache\nnautus\n')
 
