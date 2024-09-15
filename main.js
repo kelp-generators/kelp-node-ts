@@ -62,7 +62,7 @@ const generator = async (prompts, validationRegExes, about, dir, cmd, mergeScrip
         repo = await prompt('Repository', `${about.githubUsername}/${identifier}`, validationRegExes.repository)
     }
     const tsTarget = (await prompt('Target', 'ESNext', /^(es|ES|Es|eS)(([0-9]|(N|n)(E|e)(X|x)(T|t))*)$/)).toLowerCase()
-    const tsModule = await toggle('Module', 'esnext', 'commonjs')
+    const tsModule = await toggle('Module', 'NodeNext', 'commonjs')
 
     // Do your generation here
 
@@ -101,6 +101,7 @@ const generator = async (prompts, validationRegExes, about, dir, cmd, mergeScrip
         compilerOptions: {
             target: tsTarget,
             module: tsModule,
+            moduleResolution: tsModule === 'NodeNext' ? 'NodeNext' : undefined,
             declaration: true,
             outDir: './dist',
             strict: true,
